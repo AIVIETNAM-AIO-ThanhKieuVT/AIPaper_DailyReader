@@ -2,4 +2,4 @@ arxiv
 requests
 discord.py
 aiohttp
-google-generativeai
+openai
