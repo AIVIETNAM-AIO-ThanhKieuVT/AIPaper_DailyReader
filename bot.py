@@ -2,6 +2,8 @@ import os
 import discord
 from discord.ext import commands
 from ai_core import fetch_latest_paper, summarize_paper, format_paper_message
+from aiohttp import web
+import asyncio
 
 # Lấy các biến môi trường
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -55,6 +57,28 @@ async def on_message(message):
             
         except Exception as e:
             await msg.edit(content=f"❌ Đã xảy ra lỗi hệ thống: {str(e)}")
+
+# --- DUMMY WEB SERVER CHO RENDER FREE TIER ---
+async def handle_ping(request):
+    return web.Response(text="Bot is running!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    # Render tự động gán cổng vào biến môi trường PORT
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"🌍 Web server 'trá hình' đang chạy ở cổng {port} để lừa Render!")
+
+# Chạy song song Web Server và Discord Bot
+async def setup_hook():
+    bot.loop.create_task(start_web_server())
+
+bot.setup_hook = setup_hook
 
 if __name__ == "__main__":
     if DISCORD_BOT_TOKEN:
