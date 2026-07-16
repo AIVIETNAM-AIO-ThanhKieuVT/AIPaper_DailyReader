@@ -1,0 +1,41 @@
+name: Tự động gửi báo cáo AI mỗi sáng
+
+on:
+  schedule:
+    # Chạy vào 00:00 UTC (Tương đương 7:00 Sáng giờ Việt Nam) mỗi ngày
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Cho phép chạy thủ công với tham số
+    inputs:
+      topic:
+        description: 'Chủ đề báo khoa học muốn tìm ngay lập tức (Để trống sẽ lấy từ file topics.txt)'
+        required: false
+        type: string
+
+jobs:
+  run-daily-reader:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code (Lấy code về máy ảo)
+        uses: actions/checkout@v4
+
+      - name: Setup Python (Cài đặt Python 3.10)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip' # Lưu cache để cài thư viện nhanh hơn vào ngày mai
+
+      - name: Cài đặt thư viện (Install dependencies)
+        run: |
+          pip install -r requirements.txt
+
+      - name: Chạy Script (Trợ lý Đọc Báo AI)
+        env:
+          # Các biến bảo mật sẽ được lấy từ GitHub Secrets
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # Biến này lấy từ ô Input khi chị chạy thủ công
+          MANUAL_TOPIC: ${{ github.event.inputs.topic }}
+        run: |
+          python main.py
